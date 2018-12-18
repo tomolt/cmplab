@@ -1,4 +1,4 @@
 .gitignore
 CFLAGS += -Wall -Wextra -pedantic -std=c99
-: foreach source/*.c |> clang $(CFLAGS) -c %f -o %o |> build/%B.o
-: foreach build/*.o |> clang %f -o %o |> bin/cmplab
+: foreach source/*.c |> clang -g $(CFLAGS) -c %f -o %o |> build/%B.o
+: foreach build/*.o |> clang -g %f -o %o |> bin/cmplab
