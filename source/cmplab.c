@@ -171,7 +171,7 @@ static void percdown(hf_queue q, int at, int sym)
 	}
 }
 
-static void freq2hier(int freqs[256], int hier[511])
+static int freq2hier(int freqs[256], int hier[511])
 {
 	for (int i = 0; i < 511; ++i)
 		hier[i] = -1;
@@ -183,28 +183,34 @@ static void freq2hier(int freqs[256], int hier[511])
 	}
 	for (int i = 127; i >= 0; --i)
 		percdown(q, i, q.heap[i]);
-	int next_compound = 256;
+	int ncount = 256; // node count
 	while (q.count > 1) {
 		int first  = q.heap[0];
 		percdown(q, 0, q.heap[--q.count]);
 		int second = q.heap[0];
 		percdown(q, 0, q.heap[--q.count]);
-		int new = next_compound++;
+		int new = ncount++;
 		hier[first] = new;
 		hier[second] = new;
 		percup(q, q.count++, new);
 	}
+	return ncount;
 }
 
-#if 0
-static void hier2len(int hier[511], int len[256])
+static void hier2len(int hier[511], int ncount, int len[256])
 {
-	lengths[510] = 1;
-	for (int i = 509; i >= 0; --i) {
-		lengths[i] = lengths[parents[i]];
+	int depth[511];
+	depth[ncount - 1] = 1;
+	for (int i = ncount - 2; i >= 0; --i) {
+		if (hier[i] < 0) {
+			depth[i] = -1;
+		} else {
+			depth[i] = depth[hier[i]] + 1;
+		}
 	}
+	for (int i = 0; i < 256; ++i)
+		len[i] = depth[i];
 }
-#endif
 
 int main(int argc, char *argv[])
 {
@@ -214,15 +220,14 @@ int main(int argc, char *argv[])
 	countfreqs(stdin, freqs);
 
 	int hier[511];
-	freq2hier(freqs, hier);
+	int ncount = freq2hier(freqs, hier);
 
-	for (int i = 0; i < 511; ++i) {
-		if (hier[i] < 0) continue;
-		if (i > 32 && i < 127) {
-			fprintf(stdout, "'%c' -> %03d\n", i, hier[i]);
-		} else {
-			fprintf(stdout, "%03d -> %03d\n", i, hier[i]);
-		}
+	int len[256];
+	hier2len(hier, ncount, len);
+
+	for (int i = 0; i < 256; ++i) {
+		if (len[i] < 0) continue;
+		fprintf(stdout, "#%d : %d\n", i, len[i]);
 	}
 
 #if 0
