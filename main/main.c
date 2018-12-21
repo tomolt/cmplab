@@ -55,6 +55,7 @@ void encode_lzw(FILE *in, Band *out)
 {
 	lzw_word dict[65536];
 	int top = initdict(dict);
+	int bitsize = 9;
 
 	int sym = fgetc(in);
 	if (feof(in)) return;
@@ -70,12 +71,16 @@ void encode_lzw(FILE *in, Band *out)
 			index = succ;
 		} else {
 			dict[top++] = (lzw_word) {index, sym};
-			bwritebits(out, 16, index);
+			bwritebits(out, bitsize, index);
 			index = sym;
+
+			if (top >= (1 << bitsize) - 1) {
+				++bitsize;
+			}
 		}
 	}
 
-	bwritebits(out, 16, index);
+	bwritebits(out, bitsize, index);
 }
 
 static int firstsym(lzw_word dict[65536], int idx)
@@ -97,17 +102,22 @@ void decode_lzw(Band *in, FILE *out)
 {
 	lzw_word dict[65536];
 	int top = initdict(dict);
+	int bitsize = 9;
 
-	int index = breadbits(in, 16);
-	if (index == EOF) return;
+	int index = breadbits(in, bitsize);
+	if (feof(in->file)) return;
 	fputword(dict, index, out);
 
 	for (;;) {
-		int succ = breadbits(in, 16);
+		int succ = breadbits(in, bitsize);
 		if (feof(in->file)) break;
 
 		int sym = firstsym(dict, succ < top ? succ : index);
 		dict[top++] = (lzw_word) {index, sym};
+
+		if (top >= (1 << bitsize) - 2) {
+			++bitsize;
+		}
 
 		fputword(dict, succ, out);
 
