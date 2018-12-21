@@ -37,4 +37,4 @@ typedef struct {
 
 unsigned long breadbits(Band *band, int count);
 void bwritebits(Band *band, int count, unsigned long bits);
-void bclosewrite(Band *band);
+void bflushwrite(Band *band);

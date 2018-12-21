@@ -80,9 +80,8 @@ void bwritebits(Band *band, int count, unsigned long bits)
 	}
 }
 
-void bclosewrite(Band *band)
+void bflushwrite(Band *band)
 {
 	if (band->buf_cur > 0)
 		flushwritebuf(band);
-	fclose(band->file);
 }
