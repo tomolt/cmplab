@@ -41,21 +41,6 @@ static int initdict(lzw_word dict[65536])
 	return 256;
 }
 
-static int fgetidx(FILE *in)
-{
-	int hi = fgetc(in);
-	if (hi == EOF) return EOF;
-	int lo = fgetc(in);
-	if (lo == EOF) return EOF;
-	return hi * 256 + lo;
-}
-
-static void fputidx(int idx, FILE *out)
-{
-	fputc(idx / 256, out);
-	fputc(idx % 256, out);
-}
-
 static int findword(lzw_word dict[65536], int top, int index, int sym)
 {
 	for (int i = 0; i < top; ++i) {
@@ -66,18 +51,18 @@ static int findword(lzw_word dict[65536], int top, int index, int sym)
 	return -1;
 }
 
-void encode_lzw(FILE *in, FILE *out)
+void encode_lzw(FILE *in, Band *out)
 {
 	lzw_word dict[65536];
 	int top = initdict(dict);
 
 	int sym = fgetc(in);
-	if (sym == EOF) return;
+	if (feof(in)) return;
 	int index = sym;
 
 	for (;;) {
 		sym = fgetc(in);
-		if (sym == EOF) break;
+		if (feof(in)) break;
 
 		int succ = findword(dict, top, index, sym);
 
@@ -85,12 +70,12 @@ void encode_lzw(FILE *in, FILE *out)
 			index = succ;
 		} else {
 			dict[top++] = (lzw_word) {index, sym};
-			fputidx(index, out);
+			bwritebits(out, 16, index);
 			index = sym;
 		}
 	}
 
-	fputidx(index, out);
+	bwritebits(out, 16, index);
 }
 
 static int firstsym(lzw_word dict[65536], int idx)
@@ -108,18 +93,18 @@ static void fputword(lzw_word dict[65536], int idx, FILE *out)
 	fputc(dict[idx].suffix, out);
 }
 
-void decode_lzw(FILE *in, FILE *out)
+void decode_lzw(Band *in, FILE *out)
 {
 	lzw_word dict[65536];
 	int top = initdict(dict);
 
-	int index = fgetidx(in);
+	int index = breadbits(in, 16);
 	if (index == EOF) return;
 	fputword(dict, index, out);
 
 	for (;;) {
-		int succ = fgetidx(in);
-		if (succ == EOF) break;
+		int succ = breadbits(in, 16);
+		if (feof(in->file)) break;
 
 		int sym = firstsym(dict, succ < top ? succ : index);
 		dict[top++] = (lzw_word) {index, sym};
@@ -218,6 +203,7 @@ int main(int argc, char *argv[])
 {
 	(void) argc, (void) argv;
 
+#if 0
 	int freqs[256];
 	countfreqs(stdin, freqs);
 
@@ -231,12 +217,17 @@ int main(int argc, char *argv[])
 		if (len[i] < 0) continue;
 		fprintf(stdout, "#%d : %d\n", i, len[i]);
 	}
+#endif
 
-#if 0
+#if 1
 	FILE *buf = tmpfile();
-	encode_lzw(stdin, buf);
+	Band ew = {buf, 0, 0};
+	encode_lzw(stdin, &ew);
+	bflushwrite(&ew);
 	rewind(buf);
-	decode_lzw(buf, stdout);
+	Band dr = {buf, 0, 0};
+	bflushread(&dr);
+	decode_lzw(&dr, stdout);
 	fclose(buf);
 #endif
 
