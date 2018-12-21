@@ -33,7 +33,7 @@ static void bitstream_nooverread(void)
 	sd_pop();
 }
 
-#define BITSTREAM_DATA_SIZE 16
+#define BITSTREAM_DATA_SIZE 1024
 
 static void bitstream_roundtrip(void)
 {
