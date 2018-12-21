@@ -29,7 +29,8 @@ static void test_bitstream(void)
 	bflushwrite(&wband);
 	rewind(file);
 	/* read */
-	Band rband = {file, 0, 32};
+	Band rband = {file, 0, 0};
+	bflushread(&rband);
 	for (int i = 0; i < BITSTREAM_DATA_SIZE; ++i) {
 		sd_push("i = %d", i);
 		unsigned long read_back = breadbits(&rband, data[i].length);

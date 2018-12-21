@@ -28,10 +28,11 @@
 
 static void flushreadbuf(Band *band)
 {
-	band->buf_bits = (fgetc(band->file) << 24)
-		| (fgetc(band->file) << 16)
-		| (fgetc(band->file) << 8)
-		|  fgetc(band->file);
+	unsigned long d1 = fgetc(band->file);
+	unsigned long d2 = fgetc(band->file);
+	unsigned long d3 = fgetc(band->file);
+	unsigned long d4 = fgetc(band->file);
+	band->buf_bits = (d1 << 24) | (d2 << 16) | (d3 << 8) | d4;
 	band->buf_cur = 0;
 }
 
@@ -78,6 +79,11 @@ void bwritebits(Band *band, int count, unsigned long bits)
 		band->buf_bits |= (bits & mask) << band->buf_cur;
 		band->buf_cur += count;
 	}
+}
+
+void bflushread(Band *band)
+{
+	flushreadbuf(band);
 }
 
 void bflushwrite(Band *band)

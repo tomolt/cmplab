@@ -35,6 +35,8 @@ typedef struct {
 	int buf_cur;
 } Band;
 
+void bflushread(Band *band);
 unsigned long breadbits(Band *band, int count);
-void bwritebits(Band *band, int count, unsigned long bits);
+
 void bflushwrite(Band *band);
+void bwritebits(Band *band, int count, unsigned long bits);
