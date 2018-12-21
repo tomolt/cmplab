@@ -73,7 +73,7 @@ void bwritebits(Band *band, int count, unsigned long bits)
 	if (left < count) {
 		band->buf_bits |= bits << band->buf_cur;
 		flushwritebuf(band);
-		bwritebits(band, count - left, bits >> count);
+		bwritebits(band, count - left, bits >> left);
 	} else {
 		unsigned long mask = (1 << count) - 1;
 		band->buf_bits |= (bits & mask) << band->buf_cur;
