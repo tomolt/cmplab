@@ -5,12 +5,40 @@
 
 #include "band.h"
 
+static void bitstream_emptyband(void)
+{
+	sd_push("empty band");
+	FILE *file = tmpfile();
+	Band wband = {file, 0, 0};
+	bflushwrite(&wband);
+	rewind(file);
+	Band rband = {file, 0, 0};
+	bflushread(&rband);
+	sd_assert(!feof(file));
+	fclose(file);
+	sd_pop();
+}
+
+static void bitstream_nooverread(void)
+{
+	sd_push("no overread");
+	FILE *file = tmpfile();
+	fwrite("ABCD", 1, 4, file);
+	rewind(file);
+	Band band = {file, 0, 0};
+	bflushread(&band);
+	breadbits(&band, 32);
+	sd_assert(!feof(file));
+	fclose(file);
+	sd_pop();
+}
+
 #define BITSTREAM_DATA_SIZE 16
 
-static void test_bitstream(void)
+static void bitstream_roundtrip(void)
 {
 	/* setup */
-	sd_push("bitstream");
+	sd_push("roundtrip");
 	FILE *file = tmpfile();
 	/* generate test data */
 	struct {
@@ -39,6 +67,15 @@ static void test_bitstream(void)
 	}
 	/* cleanup */
 	fclose(file);
+	sd_pop();
+}
+
+static void test_bitstream(void)
+{
+	sd_push("bitstream");
+	bitstream_emptyband();
+	bitstream_nooverread();
+	bitstream_roundtrip();
 	sd_pop();
 }
 

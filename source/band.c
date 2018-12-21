@@ -88,6 +88,5 @@ void bflushread(Band *band)
 
 void bflushwrite(Band *band)
 {
-	if (band->buf_cur > 0)
-		flushwritebuf(band);
+	flushwritebuf(band);
 }
