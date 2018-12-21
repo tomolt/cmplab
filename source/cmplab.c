@@ -28,6 +28,73 @@
 #include <assert.h>
 
 typedef struct {
+	FILE *file;
+	unsigned long buf_bits;
+	int buf_cur;
+} Band;
+
+static void flushreadbuf(Band *band)
+{
+	band->buf_bits = (fgetc(band->file) << 24)
+		| (fgetc(band->file) << 16)
+		| (fgetc(band->file) << 8)
+		|  fgetc(band->file);
+	band->buf_cur = 0;
+}
+
+static void readbits_r(Band *band, int count, int shift, unsigned long *bits)
+{
+	int left = 32 - band->buf_cur;
+	if (left < count) {
+		*bits |= (band->buf_bits >> band->buf_cur) << shift;
+		flushreadbuf(band);
+		readbits_r(band, count - left, shift + left, bits);
+	} else {
+		unsigned long mask = (1 << count) - 1;
+		*bits |= ((band->buf_bits >> band->buf_cur) & mask) << shift;
+		band->buf_cur += count;
+	}
+}
+
+unsigned long breadbits(Band *band, int count)
+{
+	unsigned long bits = 0;
+	readbits_r(band, count, 0, &bits);
+	return bits;
+}
+
+static void flushwritebuf(Band *band)
+{
+	fputc(band->buf_bits >> 24, band->file);
+	fputc((band->buf_bits >> 16) & 0xFF, band->file);
+	fputc((band->buf_bits >> 8) & 0xFF, band->file);
+	fputc(band->buf_bits & 0xFF, band->file);
+	band->buf_bits = 0;
+	band->buf_cur = 0;
+}
+
+void bwritebits(Band *band, int count, unsigned long bits)
+{
+	int left = 32 - band->buf_cur;
+	if (left < count) {
+		band->buf_bits |= bits << band->buf_cur;
+		flushwritebuf(band);
+		bwritebits(band, count - left, bits >> count);
+	} else {
+		unsigned long mask = (1 << count) - 1;
+		band->buf_bits |= (bits & mask) << band->buf_cur;
+		band->buf_cur += count;
+	}
+}
+
+void bclosewrite(Band *band)
+{
+	if (band->buf_cur > 0)
+		flushwritebuf(band);
+	fclose(band->file);
+}
+
+typedef struct {
 	int prefix; // index into dict
 	int suffix; // a symbol
 } lzw_word;
