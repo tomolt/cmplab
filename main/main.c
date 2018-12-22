@@ -225,27 +225,26 @@ static int symlen_compare(void const *ap, void const *bp, void *ud)
 
 static void symsbylen(int len[256], int syms[256])
 {
+	// TODO filter out unused symbols before sorting
 	for (int i = 0; i < 256; ++i)
 		syms[i] = i;
 	qsort_r(syms, 256, sizeof(*syms), symlen_compare, len);
 }
 
-#if 0
-static void len2code(int len[256], unsigned long code[256])
+static void len2code(int syms[256], int len[256], unsigned long code[256])
 {
 	int first_sym = 0;
 	while (len[first_sym] < 0) ++first_sym;
 
-	unsigned long code = 0;
+	unsigned long next = 0;
 	int prev_len = len[first_sym];
 	for (int i = first_sym; i < 256; ++i) {
 		int sym = syms[i];
-		code[sym] = code++;
-		code <<= len[sym] - prev_len;
+		code[sym] = next++;
+		next <<= len[sym] - prev_len;
 		prev_len = len[sym];
 	}
 }
-#endif
 
 int main(int argc, char *argv[])
 {
@@ -264,11 +263,24 @@ int main(int argc, char *argv[])
 	int syms[256];
 	symsbylen(len, syms);
 
+	unsigned long code[256];
+	len2code(syms, len, code);
+
+	for (int i = 0; i < ncount; ++i) {
+		if (hier[i] < 0) continue;
+		fprintf(stdout, "%d\n", hier[i]);
+	}
+
+#if 0
 	for (int i = 0; i < 256; ++i) {
 		int sym = syms[i];
 		if (len[sym] < 0) continue;
-		fprintf(stdout, "#%d : %d\n", sym, len[sym]);
+		fprintf(stdout, "#%d : ", sym);
+		for (int d = 0; d < len[sym]; ++d)
+			fputc(((code[sym] >> d) & 1) + '0', stdout);
+		fputc('\n', stdout);
 	}
+#endif
 #endif
 
 #if 0
