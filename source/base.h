@@ -21,21 +21,15 @@
  * SOFTWARE.
  ****/
 
-// depends on stdio.h
+// depends on stdint.h
 
-#ifdef BAND_H
+#ifdef CMPLAB_BASE_H
 #error multiple inclusion
 #endif
-#define BAND_H
+#define CMPLAB_BASE_H
 
-typedef struct {
-	FILE *file;
-	unsigned long buf_bits;
-	int buf_cur;
-} Band;
+typedef int32_t Symbol;
+typedef Symbol  Synsym; // synthetic symbol
+typedef int64_t Count; // roughly proportional to the length of the input
 
-void bflushread(Band *band);
-unsigned long breadbits(Band *band, int count);
-
-void bflushwrite(Band *band);
-void bwritebits(Band *band, int count, unsigned long bits);
+#define ALPHABET_SIZE 256

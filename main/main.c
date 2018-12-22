@@ -1,6 +1,5 @@
 /****
- * MIT License
- *
+ * This file is part of cmplab, the rapid compression experimentation project.
  * Copyright (c) 2018 Thomas Oltmann
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -28,17 +27,12 @@
 #include <string.h>
 #include <assert.h>
 
+#include "base.h"
 #include "band.h"
-
-typedef int32_t Symbol;
-typedef Symbol  Synsym; // synthetic symbol
-typedef int64_t Count; // roughly proportional to the length of the input
-
-#define ALPHABET_SIZE 256
 
 #define LZW_DICT_SIZE 65536
 
-typedef LzwIdx;
+typedef unsigned int LzwIdx;
 
 typedef struct {
 	LzwIdx prefix;
@@ -251,14 +245,14 @@ static void symsbylen(int len[ALPHABET_SIZE], Symbol syms[ALPHABET_SIZE])
 	qsort_r(syms, ALPHABET_SIZE, sizeof(*syms), symlen_compare, len);
 }
 
-static void len2code(int syms[ALPHABET_SIZE], int len[ALPHABET_SIZE], unsigned long code[ALPHABET_SIZE])
+static void len2code(Symbol syms[ALPHABET_SIZE], int len[ALPHABET_SIZE], unsigned long code[ALPHABET_SIZE])
 {
-	int sym_start = 0;
+	Symbol sym_start = 0;
 	while (len[syms[sym_start]] < 0) ++sym_start;
 
 	unsigned long next = 0;
 	int prev_len = len[syms[sym_start]];
-	for (int i = sym_start; i < ALPHABET_SIZE; ++i) {
+	for (Symbol i = sym_start; i < ALPHABET_SIZE; ++i) {
 		Symbol sym = syms[i];
 		next <<= len[sym] - prev_len;
 		code[sym] = next++;
@@ -268,7 +262,10 @@ static void len2code(int syms[ALPHABET_SIZE], int len[ALPHABET_SIZE], unsigned l
 
 void encode_huff(FILE *in, Band *out, Band *table)
 {
-	int freqs[ALPHABET_SIZE], hier[ALPHABET_SIZE * 2 - 1], len[ALPHABET_SIZE], syms[ALPHABET_SIZE];
+	Count freqs[ALPHABET_SIZE];
+	Synsym hier[ALPHABET_SIZE * 2 - 1];
+	int len[ALPHABET_SIZE];
+	Symbol syms[ALPHABET_SIZE];
 	countfreqs(stdin, freqs);
 	int ncount = freq2hier(freqs, hier);
 	hier2len(hier, ncount, len);
