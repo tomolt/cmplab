@@ -206,6 +206,8 @@ static void hier2len(int hier[511], int ncount, int len[256])
 			depth[i] = depth[hier[i]] + 1;
 		}
 	}
+	for (int i = ncount - 1; i < 256; ++i)
+		depth[i] = -1;
 	for (int i = 0; i < 256; ++i)
 		len[i] = depth[i];
 }
