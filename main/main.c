@@ -22,6 +22,7 @@
  * SOFTWARE.
  ****/
 
+ #define _GNU_SOURCE // for qsort_r
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -209,11 +210,48 @@ static void hier2len(int hier[511], int ncount, int len[256])
 		len[i] = depth[i];
 }
 
+static int symlen_compare(void const *ap, void const *bp, void *ud)
+{
+	int *len = ud;
+	int as = * (int *) ap;
+	int bs = * (int *) bp;
+	int ld = len[as] - len[bs];
+	if (ld != 0) {
+		return ld;
+	} else {
+		return as - bs;
+	}
+}
+
+static void symsbylen(int len[256], int syms[256])
+{
+	for (int i = 0; i < 256; ++i)
+		syms[i] = i;
+	qsort_r(syms, 256, sizeof(*syms), symlen_compare, len);
+}
+
+#if 0
+static void len2code(int len[256], unsigned long code[256])
+{
+	int first_sym = 0;
+	while (len[first_sym] < 0) ++first_sym;
+
+	unsigned long code = 0;
+	int prev_len = len[first_sym];
+	for (int i = first_sym; i < 256; ++i) {
+		int sym = syms[i];
+		code[sym] = code++;
+		code <<= len[sym] - prev_len;
+		prev_len = len[sym];
+	}
+}
+#endif
+
 int main(int argc, char *argv[])
 {
 	(void) argc, (void) argv;
 
-#if 0
+#if 1
 	int freqs[256];
 	countfreqs(stdin, freqs);
 
@@ -223,13 +261,17 @@ int main(int argc, char *argv[])
 	int len[256];
 	hier2len(hier, ncount, len);
 
+	int syms[256];
+	symsbylen(len, syms);
+
 	for (int i = 0; i < 256; ++i) {
-		if (len[i] < 0) continue;
-		fprintf(stdout, "#%d : %d\n", i, len[i]);
+		int sym = syms[i];
+		if (len[sym] < 0) continue;
+		fprintf(stdout, "#%d : %d\n", sym, len[sym]);
 	}
 #endif
 
-#if 1
+#if 0
 	FILE *buf = tmpfile();
 	Band ew = {buf, 0, 0};
 	encode_lzw(stdin, &ew);
