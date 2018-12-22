@@ -247,8 +247,8 @@ static void len2code(int syms[256], int len[256], unsigned long code[256])
 	int prev_len = len[syms[sym_start]];
 	for (int i = sym_start; i < 256; ++i) {
 		int sym = syms[i];
-		code[sym] = next++;
 		next <<= len[sym] - prev_len;
+		code[sym] = next++;
 		prev_len = len[sym];
 	}
 }
