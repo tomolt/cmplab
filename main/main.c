@@ -253,34 +253,35 @@ static void len2code(int syms[256], int len[256], unsigned long code[256])
 	}
 }
 
+void encode_huff(FILE *in, Band *out, Band *table)
+{
+	int freqs[256], hier[511], len[256], syms[256];
+	countfreqs(stdin, freqs);
+	int ncount = freq2hier(freqs, hier);
+	hier2len(hier, ncount, len);
+	// TODO output table
+	(void) table;
+
+	rewind(in);
+	symsbylen(len, syms);
+	unsigned long code[256];
+	len2code(syms, len, code);
+	for (;;) {
+		int sym = fgetc(in);
+		if (feof(in)) break;
+
+		bwritebits(out, len[sym], code[sym]);
+	}
+}
+
 int main(int argc, char *argv[])
 {
 	(void) argc, (void) argv;
 
 #if 1
-	int freqs[256];
-	countfreqs(stdin, freqs);
-
-	int hier[511];
-	int ncount = freq2hier(freqs, hier);
-
-	int len[256];
-	hier2len(hier, ncount, len);
-
-	int syms[256];
-	symsbylen(len, syms);
-
-	unsigned long code[256];
-	len2code(syms, len, code);
-
-	for (int i = 0; i < 256; ++i) {
-		int sym = syms[i];
-		if (len[sym] < 0) continue;
-		fprintf(stdout, "#%03d : ", sym);
-		for (int d = len[sym] - 1; d >= 0; --d)
-			fputc(((code[sym] >> d) & 1) + '0', stdout);
-		fputc('\n', stdout);
-	}
+	Band ew = {stdout, 0, 0};
+	encode_huff(stdin, &ew, NULL);
+	bflushwrite(&ew);
 #endif
 
 #if 0
