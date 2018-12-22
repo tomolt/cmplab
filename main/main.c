@@ -271,9 +271,9 @@ int main(int argc, char *argv[])
 	for (int i = 0; i < 256; ++i) {
 		int sym = syms[i];
 		if (len[sym] < 0) continue;
-		fprintf(stdout, "#%d : %d", sym, len[sym]);
-		// for (int d = 0; d < len[sym]; ++d)
-		// 	fputc(((code[sym] >> d) & 1) + '0', stdout);
+		fprintf(stdout, "#%d : ", sym);
+		for (int d = 0; d < len[sym]; ++d)
+			fputc(((code[sym] >> d) & 1) + '0', stdout);
 		fputc('\n', stdout);
 	}
 #endif
