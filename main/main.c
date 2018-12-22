@@ -179,9 +179,9 @@ static int freq2hier(int freqs[256], int hier[511])
 		if (freqs[sym] == 0) continue;
 		q.heap[q.count++] = sym;
 	}
-	for (int i = 127; i >= 0; --i)
+	for (int i = q.count / 2 - 1; i >= 0; --i)
 		percdown(q, i, q.heap[i]);
-	int ncount = 256; // node count
+	int ncount = q.count; // node count
 	while (q.count > 1) {
 		int first  = q.heap[0];
 		percdown(q, 0, q.heap[--q.count]);
@@ -266,21 +266,14 @@ int main(int argc, char *argv[])
 	unsigned long code[256];
 	len2code(syms, len, code);
 
-	for (int i = 0; i < ncount; ++i) {
-		if (hier[i] < 0) continue;
-		fprintf(stdout, "%d\n", hier[i]);
-	}
-
-#if 0
 	for (int i = 0; i < 256; ++i) {
 		int sym = syms[i];
 		if (len[sym] < 0) continue;
-		fprintf(stdout, "#%d : ", sym);
-		for (int d = 0; d < len[sym]; ++d)
-			fputc(((code[sym] >> d) & 1) + '0', stdout);
+		fprintf(stdout, "#%d : %d", sym, len[sym]);
+		// for (int d = 0; d < len[sym]; ++d)
+		// 	fputc(((code[sym] >> d) & 1) + '0', stdout);
 		fputc('\n', stdout);
 	}
-#endif
 #endif
 
 #if 0
