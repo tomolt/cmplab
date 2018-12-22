@@ -132,7 +132,7 @@ static void countfreqs(FILE *in, int freqs[256])
 		freqs[i] = 0;
 	for (;;) {
 		int sym = fgetc(in);
-		if (sym == EOF) break;
+		if (feof(in)) break;
 		++freqs[sym];
 	}
 }
@@ -169,11 +169,12 @@ static void percdown(hf_queue q, int at, int sym)
 	}
 }
 
-static int freq2hier(int freqs[256], int hier[511])
+static int freq2hier(int sfreqs[256], int hier[511])
 {
-	for (int i = 0; i < 511; ++i)
-		hier[i] = -1;
 	int heap[256];
+	int freqs[511];
+	for (int i = 0; i < 256; ++i)
+		freqs[i] = sfreqs[i];
 	hf_queue q = {freqs, heap, 0};
 	for (int sym = 0; sym < 256; ++sym) {
 		if (freqs[sym] == 0) continue;
@@ -181,13 +182,17 @@ static int freq2hier(int freqs[256], int hier[511])
 	}
 	for (int i = q.count / 2 - 1; i >= 0; --i)
 		percdown(q, i, q.heap[i]);
-	int ncount = q.count; // node count
+
+	for (int i = 0; i < 511; ++i)
+		hier[i] = -1;
+	int ncount = 256; // node count
 	while (q.count > 1) {
 		int first  = q.heap[0];
 		percdown(q, 0, q.heap[--q.count]);
 		int second = q.heap[0];
 		percdown(q, 0, q.heap[--q.count]);
 		int new = ncount++;
+		q.freqs[new] = q.freqs[first] + q.freqs[second];
 		hier[first] = new;
 		hier[second] = new;
 		percup(q, q.count++, new);
@@ -235,12 +240,12 @@ static void symsbylen(int len[256], int syms[256])
 
 static void len2code(int syms[256], int len[256], unsigned long code[256])
 {
-	int first_sym = 0;
-	while (len[first_sym] < 0) ++first_sym;
+	int sym_start = 0;
+	while (len[syms[sym_start]] < 0) ++sym_start;
 
 	unsigned long next = 0;
-	int prev_len = len[first_sym];
-	for (int i = first_sym; i < 256; ++i) {
+	int prev_len = len[syms[sym_start]];
+	for (int i = sym_start; i < 256; ++i) {
 		int sym = syms[i];
 		code[sym] = next++;
 		next <<= len[sym] - prev_len;
@@ -271,8 +276,8 @@ int main(int argc, char *argv[])
 	for (int i = 0; i < 256; ++i) {
 		int sym = syms[i];
 		if (len[sym] < 0) continue;
-		fprintf(stdout, "#%d : ", sym);
-		for (int d = 0; d < len[sym]; ++d)
+		fprintf(stdout, "#%03d : ", sym);
+		for (int d = len[sym] - 1; d >= 0; --d)
 			fputc(((code[sym] >> d) & 1) + '0', stdout);
 		fputc('\n', stdout);
 	}
