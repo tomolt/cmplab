@@ -29,7 +29,7 @@
 
 #define LZW_DICT_SIZE 65536
 
-typedef unsigned int LzwIdx;
+typedef int LzwIdx;
 
 typedef struct {
 	LzwIdx prefix;
