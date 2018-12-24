@@ -24,8 +24,8 @@
 #include <stdio.h>
 #include <stdint.h>
 
-#include "base.h"
 #include "bitstream.h"
+#include "base.h"
 
 void encode_zle(FILE *in, Bitstream *out)
 {

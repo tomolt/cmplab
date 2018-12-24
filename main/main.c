@@ -25,8 +25,8 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "base.h"
 #include "bitstream.h"
+#include "base.h"
 
 extern void encode_lzw(FILE *in, Bitstream *out);
 extern void decode_lzw(Bitstream *in, FILE *out);
@@ -36,6 +36,24 @@ extern void decode_zle(Bitstream *in, FILE *out);
 
 extern void encode_huff(FILE *in, Bitstream *out, Bitstream *table);
 
+static void encode_dummy(FILE *in, Bitstream *out)
+{
+	(void) in;
+	fputs("NYI", out->file);
+}
+
+static void decode_dummy(Bitstream *in, FILE *out)
+{
+	(void) in;
+	fputs("NYI", out);
+}
+
+static Algorithm const algorithmRegistry[] = {
+	{"lzw", encode_lzw, decode_lzw},
+	{"huff", encode_dummy, decode_dummy}, // TODO huffman coding
+	{"zle", encode_zle, decode_zle},
+};
+
 static void usage(char const *name, char const *arg)
 {
 	fprintf(stderr, "incorrect %s.\n", arg);
@@ -44,13 +62,22 @@ static void usage(char const *name, char const *arg)
 
 int main(int argc, char *argv[])
 {
+	(void) encode_dummy;
+	(void) decode_dummy;
+
 	if (argc != 3) {
 		usage(argv[0], "argument count");
 		return EXIT_FAILURE;
 	}
 
-	if (strcmp(argv[1], "lzw") == 0) {
-	} else {
+	Algorithm const *algorithm = NULL;
+	for (int i = 0; i < (int)STATIC_LENGTH(algorithmRegistry); ++i) {
+		if (strcmp(algorithmRegistry[i].identifier, argv[1]) == 0) {
+			algorithm = &algorithmRegistry[i];
+			break;
+		}
+	}
+	if (algorithm == NULL) {
 		usage(argv[0], "algorithm");
 		return EXIT_FAILURE;
 	}
@@ -72,23 +99,23 @@ int main(int argc, char *argv[])
 	switch (mode) {
 	case ENCODE:
 		outb = (Bitstream) {stdout, 0, 0};
-		encode_lzw(stdin, &outb);
+		algorithm->encode(stdin, &outb);
 		bitstreamFlushWrite(&outb);
 		break;
 	case DECODE:
 		inb = (Bitstream) {stdin, 0, 0};
 		bitstreamFlushRead(&inb);
-		decode_lzw(&inb, stdout);
+		algorithm->decode(&inb, stdout);
 		break;
 	case ROUNDTRIP:
 		buf = tmpfile();
 		outb = (Bitstream) {buf, 0, 0};
-		encode_lzw(stdin, &outb);
+		algorithm->encode(stdin, &outb);
 		bitstreamFlushWrite(&outb);
 		rewind(buf);
 		inb = (Bitstream) {buf, 0, 0};
 		bitstreamFlushRead(&inb);
-		decode_lzw(&inb, stdout);
+		algorithm->decode(&inb, stdout);
 		fclose(buf);
 		break;
 	}

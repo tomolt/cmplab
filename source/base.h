@@ -22,11 +22,14 @@
  ****/
 
 // depends on stdint.h
+// depends on bitstream.h
 
 #ifdef CMPLAB_BASE_H
 #error multiple inclusion
 #endif
 #define CMPLAB_BASE_H
+
+#define STATIC_LENGTH(a) (sizeof(a) / sizeof(*(a)))
 
 #define KB(x) ((x) * 1024)
 #define MB(x) KB(KB(x))
@@ -37,3 +40,9 @@ typedef Symbol  Synsym; // synthetic symbol
 typedef int64_t Count; // roughly proportional to the length of the input
 
 #define ALPHABET_SIZE 256
+
+typedef struct {
+	char const *identifier;
+	void (*encode)(FILE *, Bitstream *);
+	void (*decode)(Bitstream *, FILE *);
+} Algorithm;

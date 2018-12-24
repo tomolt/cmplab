@@ -24,8 +24,8 @@
 #include <stdio.h>
 #include <stdint.h>
 
-#include "base.h"
 #include "bitstream.h"
+#include "base.h"
 
 #define LZW_DICT_SIZE 65536
 

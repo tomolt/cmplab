@@ -25,8 +25,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "base.h"
 #include "bitstream.h"
+#include "base.h"
 
 static void countfreqs(FILE *in, Count freqs[ALPHABET_SIZE])
 {

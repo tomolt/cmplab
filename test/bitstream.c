@@ -26,8 +26,8 @@
 
 #include "sd_cuts.h"
 
-#include "base.h"
 #include "bitstream.h"
+#include "base.h"
 
 static void emptyBitstream(void)
 {
