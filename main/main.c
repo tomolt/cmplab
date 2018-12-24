@@ -31,6 +31,9 @@
 extern void encode_lzw(FILE *in, Bitstream *out);
 extern void decode_lzw(Bitstream *in, FILE *out);
 
+extern void encode_zle(FILE *in, Bitstream *out);
+extern void decode_zle(Bitstream *in, FILE *out);
+
 extern void encode_huff(FILE *in, Bitstream *out, Bitstream *table);
 
 static void usage(char const *name, char const *arg)
