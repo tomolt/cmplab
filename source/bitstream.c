@@ -23,69 +23,70 @@
 
 #include <stdio.h>
 
-#include "band.h"
+#include "bitstream.h"
 
-static void flushreadbuf(Band *band)
+static void flushReadBuffer(Bitstream *bs)
 {
-	unsigned long d1 = fgetc(band->file);
-	unsigned long d2 = fgetc(band->file);
-	unsigned long d3 = fgetc(band->file);
-	unsigned long d4 = fgetc(band->file);
-	band->buf_bits = (d1 << 24) | (d2 << 16) | (d3 << 8) | d4;
-	band->buf_cur = 0;
+	unsigned long d1 = fgetc(bs->file);
+	unsigned long d2 = fgetc(bs->file);
+	unsigned long d3 = fgetc(bs->file);
+	unsigned long d4 = fgetc(bs->file);
+	bs->buf_bits = (d1 << 24) | (d2 << 16) | (d3 << 8) | d4;
+	bs->buf_cur = 0;
 }
 
-static void readbits_r(Band *band, int count, int shift, unsigned long *bits)
+void bitstreamFlushRead(Bitstream *bs)
 {
-	int left = 32 - band->buf_cur;
+	flushReadBuffer(bs);
+}
+
+static void readBitsRecursive(Bitstream *bs,
+	int count, int shift, unsigned long *bits)
+{
+	int left = 32 - bs->buf_cur;
 	if (left < count) {
-		*bits |= (band->buf_bits >> band->buf_cur) << shift;
-		flushreadbuf(band);
-		readbits_r(band, count - left, shift + left, bits);
+		*bits |= (bs->buf_bits >> bs->buf_cur) << shift;
+		flushReadBuffer(bs);
+		readBitsRecursive(bs, count - left, shift + left, bits);
 	} else {
 		unsigned long mask = (1 << count) - 1;
-		*bits |= ((band->buf_bits >> band->buf_cur) & mask) << shift;
-		band->buf_cur += count;
+		*bits |= ((bs->buf_bits >> bs->buf_cur) & mask) << shift;
+		bs->buf_cur += count;
 	}
 }
 
-unsigned long breadbits(Band *band, int count)
+unsigned long bitstreamReadBits(Bitstream *bs, int count)
 {
 	unsigned long bits = 0;
-	readbits_r(band, count, 0, &bits);
+	readBitsRecursive(bs, count, 0, &bits);
 	return bits;
 }
 
-static void flushwritebuf(Band *band)
+static void flushWriteBuffer(Bitstream *bs)
 {
-	fputc(band->buf_bits >> 24, band->file);
-	fputc((band->buf_bits >> 16) & 0xFF, band->file);
-	fputc((band->buf_bits >> 8) & 0xFF, band->file);
-	fputc(band->buf_bits & 0xFF, band->file);
-	band->buf_bits = 0;
-	band->buf_cur = 0;
+	fputc(bs->buf_bits >> 24, bs->file);
+	fputc((bs->buf_bits >> 16) & 0xFF, bs->file);
+	fputc((bs->buf_bits >> 8) & 0xFF, bs->file);
+	fputc(bs->buf_bits & 0xFF, bs->file);
+	bs->buf_bits = 0;
+	bs->buf_cur = 0;
 }
 
-void bwritebits(Band *band, int count, unsigned long bits)
+void bitstreamWriteBits(Bitstream *bs, int count, unsigned long bits)
 {
-	int left = 32 - band->buf_cur;
+	int left = 32 - bs->buf_cur;
 	if (left < count) {
-		band->buf_bits |= bits << band->buf_cur;
-		flushwritebuf(band);
-		bwritebits(band, count - left, bits >> left);
+		bs->buf_bits |= bits << bs->buf_cur;
+		flushWriteBuffer(bs);
+		bitstreamWriteBits(bs, count - left, bits >> left);
 	} else {
 		unsigned long mask = (1 << count) - 1;
-		band->buf_bits |= (bits & mask) << band->buf_cur;
-		band->buf_cur += count;
+		bs->buf_bits |= (bits & mask) << bs->buf_cur;
+		bs->buf_cur += count;
 	}
 }
 
-void bflushread(Band *band)
+void bitstreamFlushWrite(Bitstream *bs)
 {
-	flushreadbuf(band);
-}
-
-void bflushwrite(Band *band)
-{
-	flushwritebuf(band);
+	flushWriteBuffer(bs);
 }

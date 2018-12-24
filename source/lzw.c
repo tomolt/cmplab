@@ -25,7 +25,7 @@
 #include <stdint.h>
 
 #include "base.h"
-#include "band.h"
+#include "bitstream.h"
 
 #define LZW_DICT_SIZE 65536
 
@@ -53,7 +53,7 @@ static LzwIdx findword(lzw_word dict[LZW_DICT_SIZE], LzwIdx top, LzwIdx index, S
 	return -1;
 }
 
-void encode_lzw(FILE *in, Band *out)
+void encode_lzw(FILE *in, Bitstream *out)
 {
 	lzw_word dict[LZW_DICT_SIZE];
 	LzwIdx top = initdict(dict);
@@ -74,7 +74,7 @@ void encode_lzw(FILE *in, Band *out)
 			index = succ;
 		} else {
 			dict[top++] = (lzw_word) {index, sym};
-			bwritebits(out, bitsize, index);
+			bitstreamWriteBits(out, bitsize, index);
 			index = sym;
 
 			if (top >= (1 << bitsize) - 1) {
@@ -83,7 +83,7 @@ void encode_lzw(FILE *in, Band *out)
 		}
 	}
 
-	bwritebits(out, bitsize, index);
+	bitstreamWriteBits(out, bitsize, index);
 }
 
 static Symbol firstsym(lzw_word dict[LZW_DICT_SIZE], LzwIdx idx)
@@ -101,7 +101,7 @@ static void fputword(lzw_word dict[LZW_DICT_SIZE], LzwIdx idx, FILE *out)
 	fputc(dict[idx].suffix, out);
 }
 
-void decode_lzw(Band *in, FILE *out)
+void decode_lzw(Bitstream *in, FILE *out)
 {
 	lzw_word dict[LZW_DICT_SIZE];
 	LzwIdx top = initdict(dict);
@@ -109,12 +109,12 @@ void decode_lzw(Band *in, FILE *out)
 	int bitsize = 1;
 	while (ALPHABET_SIZE >> bitsize > 0) ++bitsize;
 
-	LzwIdx index = breadbits(in, bitsize);
+	LzwIdx index = bitstreamReadBits(in, bitsize);
 	if (feof(in->file)) return;
 	fputword(dict, index, out);
 
 	for (;;) {
-		LzwIdx succ = breadbits(in, bitsize);
+		LzwIdx succ = bitstreamReadBits(in, bitsize);
 		if (feof(in->file)) break;
 
 		Symbol sym = firstsym(dict, succ < top ? succ : index);

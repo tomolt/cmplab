@@ -26,7 +26,7 @@
 #include <stdio.h>
 
 #include "base.h"
-#include "band.h"
+#include "bitstream.h"
 
 static void countfreqs(FILE *in, Count freqs[ALPHABET_SIZE])
 {
@@ -155,7 +155,7 @@ static void len2code(Symbol syms[ALPHABET_SIZE], int len[ALPHABET_SIZE], unsigne
 	}
 }
 
-void encode_huff(FILE *in, Band *out, Band *table)
+void encode_huff(FILE *in, Bitstream *out, Bitstream *table)
 {
 	Count freqs[ALPHABET_SIZE];
 	Synsym hier[ALPHABET_SIZE * 2 - 1];
@@ -175,6 +175,6 @@ void encode_huff(FILE *in, Band *out, Band *table)
 		Symbol sym = fgetc(in);
 		if (feof(in)) break;
 
-		bwritebits(out, len[sym], code[sym]);
+		bitstreamWriteBits(out, len[sym], code[sym]);
 	}
 }

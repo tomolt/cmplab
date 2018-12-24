@@ -3,17 +3,17 @@
 #define SD_IMPLEMENT_HERE
 #include "sd_cuts.h"
 
-#include "band.h"
+#include "bitstream.h"
 
 static void bitstream_emptyband(void)
 {
 	sd_push("empty band");
 	FILE *file = tmpfile();
-	Band wband = {file, 0, 0};
-	bflushwrite(&wband);
+	Bitstream w = {file, 0, 0};
+	bitstreamFlushWrite(&w);
 	rewind(file);
-	Band rband = {file, 0, 0};
-	bflushread(&rband);
+	Bitstream r = {file, 0, 0};
+	bitstreamFlushRead(&r);
 	sd_assert(!feof(file));
 	fclose(file);
 	sd_pop();
@@ -25,9 +25,9 @@ static void bitstream_nooverread(void)
 	FILE *file = tmpfile();
 	fwrite("ABCD", 1, 4, file);
 	rewind(file);
-	Band band = {file, 0, 0};
-	bflushread(&band);
-	breadbits(&band, 32);
+	Bitstream b = {file, 0, 0};
+	bitstreamFlushRead(&b);
+	bitstreamReadBits(&b, 32);
 	sd_assert(!feof(file));
 	fclose(file);
 	sd_pop();
@@ -50,18 +50,18 @@ static void bitstream_roundtrip(void)
 		data[i].bits = rand() & ((1 << data[i].length) - 1);
 	}
 	/* write */
-	Band wband = {file, 0, 0};
+	Bitstream w = {file, 0, 0};
 	for (int i = 0; i < BITSTREAM_DATA_SIZE; ++i) {
-		bwritebits(&wband, data[i].length, data[i].bits);
+		bitstreamWriteBits(&w, data[i].length, data[i].bits);
 	}
-	bflushwrite(&wband);
+	bitstreamFlushWrite(&w);
 	rewind(file);
 	/* read */
-	Band rband = {file, 0, 0};
-	bflushread(&rband);
+	Bitstream r = {file, 0, 0};
+	bitstreamFlushRead(&r);
 	for (int i = 0; i < BITSTREAM_DATA_SIZE; ++i) {
 		sd_push("i = %d", i);
-		unsigned long read_back = breadbits(&rband, data[i].length);
+		unsigned long read_back = bitstreamReadBits(&r, data[i].length);
 		sd_assertiq(data[i].bits, read_back);
 		sd_pop();
 	}

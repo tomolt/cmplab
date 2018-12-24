@@ -23,19 +23,19 @@
 
 // depends on stdio.h
 
-#ifdef BAND_H
+#ifdef CMPLAB_BITSTREAM_H
 #error multiple inclusion
 #endif
-#define BAND_H
+#define CMPLAB_BITSTREAM_H
 
 typedef struct {
 	FILE *file;
 	unsigned long buf_bits;
 	int buf_cur;
-} Band;
+} Bitstream;
 
-void bflushread(Band *band);
-unsigned long breadbits(Band *band, int count);
+void bitstreamFlushRead(Bitstream *bs);
+unsigned long bitstreamReadBits(Bitstream *bs, int count);
 
-void bflushwrite(Band *band);
-void bwritebits(Band *band, int count, unsigned long bits);
+void bitstreamWriteBits(Bitstream *bs, int count, unsigned long bits);
+void bitstreamFlushWrite(Bitstream *bs);

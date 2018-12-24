@@ -26,12 +26,12 @@
 #include <string.h>
 
 #include "base.h"
-#include "band.h"
+#include "bitstream.h"
 
-extern void encode_lzw(FILE *in, Band *out);
-extern void decode_lzw(Band *in, FILE *out);
+extern void encode_lzw(FILE *in, Bitstream *out);
+extern void decode_lzw(Bitstream *in, FILE *out);
 
-extern void encode_huff(FILE *in, Band *out, Band *table);
+extern void encode_huff(FILE *in, Bitstream *out, Bitstream *table);
 
 static void usage(char const *name, char const *arg)
 {
@@ -65,26 +65,26 @@ int main(int argc, char *argv[])
 	}
 
 	FILE *buf;
-	Band outb, inb;
+	Bitstream outb, inb;
 	switch (mode) {
 	case ENCODE:
-		outb = (Band) {stdout, 0, 0};
+		outb = (Bitstream) {stdout, 0, 0};
 		encode_lzw(stdin, &outb);
-		bflushwrite(&outb);
+		bitstreamFlushWrite(&outb);
 		break;
 	case DECODE:
-		inb = (Band) {stdin, 0, 0};
-		bflushread(&inb);
+		inb = (Bitstream) {stdin, 0, 0};
+		bitstreamFlushRead(&inb);
 		decode_lzw(&inb, stdout);
 		break;
 	case ROUNDTRIP:
 		buf = tmpfile();
-		outb = (Band) {buf, 0, 0};
+		outb = (Bitstream) {buf, 0, 0};
 		encode_lzw(stdin, &outb);
-		bflushwrite(&outb);
+		bitstreamFlushWrite(&outb);
 		rewind(buf);
-		inb = (Band) {buf, 0, 0};
-		bflushread(&inb);
+		inb = (Bitstream) {buf, 0, 0};
+		bitstreamFlushRead(&inb);
 		decode_lzw(&inb, stdout);
 		fclose(buf);
 		break;
