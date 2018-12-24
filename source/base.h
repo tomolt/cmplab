@@ -28,6 +28,10 @@
 #endif
 #define CMPLAB_BASE_H
 
+#define KB(x) ((x) * 1024)
+#define MB(x) KB(KB(x))
+#define GB(x) KB(MB(x))
+
 typedef int32_t Symbol;
 typedef Symbol  Synsym; // synthetic symbol
 typedef int64_t Count; // roughly proportional to the length of the input
